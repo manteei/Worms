@@ -5,8 +5,7 @@
 #include "helpFile.hpp"
 using namespace sf;
 
-float angleX, angleY; // Углы поворота камеры
-
+float angleX, angleY; // РЈРіР»С‹ РїРѕРІРѕСЂРѕС‚Р° РєР°РјРµСЂС‹
 
 class Player
 {
@@ -16,17 +15,20 @@ public:
     float w, h, d;  // width, height, depth 
     bool onGround;
     float speed;
+    bool needJump;
 
     Player(float x0, float y0, float z0)
     {
         x = x0; y = y0; z = z0;
         dx = 0; dy = 0; dz = 0;
-        w = 5; h = 20; d = 5; speed = 5;
+        w = 5; h = 10; d = 5; speed = 5;
         onGround = false;
+        needJump = false;
     }
 
     void update(float time)
     {
+        needJump = false;
         if (!onGround) dy -= 1.5 * time;
         onGround = 0;
 
@@ -38,22 +40,27 @@ public:
         collision(0, 0, dz);
 
         dx = dz = 0;
+
+       
     }
 
     void collision(float Dx, float Dy, float Dz)
-    {
-        for (int X = (x - w) / size; X < (x + w) / size; X++)
-            for (int Y = (y - h) / size; Y < (y + h) / size; Y++)
-                for (int Z = (z - d) / size; Z < (z + d) / size; Z++)
-                    if (check(X, Y, Z)) {
-                        if (Dx > 0)  x = X * size - w;
-                        if (Dx < 0)  x = X * size + size + w;
-                        if (Dy > 0)  y = Y * size - h;
-                        if (Dy < 0) { y = Y * size + size + h; onGround = true; dy = 0; }
-                        if (Dz > 0)  z = Z * size - d;
-                        if (Dz < 0)  z = Z * size + size + d;
-                    }
-    }
+	{
+		for (int X = (x - w) / size; X < (x + w) / size; X++)
+			for (int Y = (y - h) / size; Y < (y + h) / size; Y++)
+				for (int Z = (z - d) / size; Z < (z + d) / size; Z++)
+					if (check(X, Y, Z)) {
+                        if (Dx > 0) {
+                            x = X * size - w; needJump = true;
+                        }
+                        if (Dx < 0) { x = X * size + size + w; needJump = true;
+                        }
+						if (Dy > 0)  y = Y * size - h;
+						if (Dy < 0) { y = Y * size + size + h; onGround = true; dy = 0; }
+                        if (Dz > 0) { z = Z * size - d; needJump = true; }
+                        if (Dz < 0) { z = Z * size + size + d; needJump = true; }
+					}
+	}
 
     void keyboard()
     {
@@ -63,6 +70,9 @@ public:
         {
             dx = -sin(angleX / 180 * PI) * speed;
             dz = -cos(angleX / 180 * PI) * speed;
+            if (needJump) {
+                onGround = false; dy = 12; 
+            }
         }
 
         if (Keyboard::isKeyPressed(Keyboard::S))
@@ -99,7 +109,7 @@ int main()
 
     // load resources, initialize the OpenGL states, ...
 
-    ///////текстуры///////
+    ///////С‚РµРєСЃС‚СѓСЂС‹///////
     Texture t;
     t.loadFromFile("resources/cursor.png");
     Sprite s(t); s.setOrigin(8, 8); s.setPosition(400, 300);
@@ -133,17 +143,16 @@ int main()
 
     ShowCursor(FALSE);
 
-    ////карта высот////
+    ////РєР°СЂС‚Р° РІС‹СЃРѕС‚////
     Image im;  im.loadFromFile("resources/heightmap.png");
 
-    for (int x = 0; x < 256; x++)
-        for (int z = 0; z < 256; z++)
-        {
-            int c = im.getPixel(x, z).r / 15;
-            for (int y = 0; y < c; y++)
-                if (y > c - 3) mass[x][y][z] = 1;
-        }
-
+	for (int x = 0; x < 256; x++)
+		for (int z = 0; z < 256; z++)
+		{
+			int c = im.getPixel(x, z).r / 15;
+			for (int y = 0; y < c; y++)
+				if (y > c - 3) mass[x][y][z] = 1;
+		}
     Clock clock;
     // run the main loop
     bool running = true;
@@ -190,7 +199,7 @@ int main()
         int xt = window.getPosition().x + 400;
         int yt = window.getPosition().y + 300;
 
-        angleX += (xt - mousexy.x) / 4; //4 — чувствительность 
+        angleX += (xt - mousexy.x) / 4; //4 вЂ” С‡СѓРІСЃС‚РІРёС‚РµР»СЊРЅРѕСЃС‚СЊ 
         angleY += (yt - mousexy.y) / 4;
 
         if (angleY < -89.0) { angleY = -89.0; }
@@ -209,7 +218,7 @@ int main()
 
             int X, Y, Z, oldX, oldY, oldZ;
             int dist = 0;
-            while (dist < 120)  // радиус действия
+            while (dist < 120)  // СЂР°РґРёСѓСЃ РґРµР№СЃС‚РІРёСЏ
             {
                 dist++;
 
@@ -236,29 +245,19 @@ int main()
         createBox(skybox, 1000);
         glTranslatef(-p.x, -p.y, -p.z);
 
-        //////////рисуем боксы///////
-        int R = 30;
 
-        int X = p.x / size;
-        int Y = p.y / size;
-        int Z = p.z / size;
-
-        for (int x = X - R; x < X + R; x++)
-            for (int y = 0; y < 25; y++)
-                for (int z = Z - R; z < Z + R; z++)
+        for (int x = 0; x < 100; x++)
+            for (int y = 0; y < 60; y++)
+                for (int z = 0; z < 100; z++)
                 {
-                    if (!check(x, y, z)) continue;
-
-                    glTranslatef(size * x + size / 2, size * y + size / 2, size * z + size / 2);
-
+                    if (!mass[x][y][z]) continue;
+                    glTranslatef(x * size + size / 2, y * size + size / 2, z * size + size / 2);
                     createBox(box, size / 2);
-
-                    glTranslatef(-size * x - size / 2, -size * y - size / 2, -size * z - size / 2);
+                    glTranslatef(-x * size - size / 2, -y * size - size / 2, -z * size - size / 2);
                 }
 
-
         window.pushGLStates();
-        window.draw(s);      //рисуем курсор
+        window.draw(s);      //СЂРёСЃСѓРµРј РєСѓСЂСЃРѕСЂ
         window.popGLStates();
 
         window.display();
