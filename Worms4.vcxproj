@@ -37,6 +37,9 @@
   <ItemGroup>
     <ClInclude Include="helpFile.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\VisualStudio Projects\Worms4\resources\textures\sand.jpg" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

@@ -71,27 +71,23 @@ public:
         // Проверьте, не выходит ли персонаж за границы карты
         if (x - w + Dx < minX) {
             x = minX + w;
-            needJump = true;
+ 
         }
         if (x + w + Dx > maxX) {
             x = maxX - w;
-            needJump = true;
+
         }
         if (y - h + Dy < minY) {
             y = minY + h;
             onGround = true;
             dy = 0;
         }
-        if (y + h + Dy > maxY) {
-            y = maxY - h;
-        }
         if (z - d + Dz < minZ) {
             z = minZ + d;
-            needJump = true;
+
         }
         if (z + d + Dz > maxZ) {
             z = maxZ - d;
-            needJump = true;
         }
 
         for (int X = (x - w) / size; X < (x + w) / size; X++)
@@ -183,12 +179,12 @@ int main()
 
 
     GLuint box[6];
-    box[0] = LoadTexture("resources/grassBox/side.jpg");
-    box[1] = LoadTexture("resources/grassBox/side.jpg");
-    box[2] = LoadTexture("resources/grassBox/side.jpg");
-    box[3] = LoadTexture("resources/grassBox/side.jpg");
-    box[4] = LoadTexture("resources/grassBox/bottom.jpg");
-    box[5] = LoadTexture("resources/grassBox/top.jpg");
+    box[0] = LoadTexture("resources/textures/sand.jpg");
+    box[1] = LoadTexture("resources/textures/sand.jpg");    
+    box[2] = LoadTexture("resources/textures/sand.jpg"); 
+    box[3] = LoadTexture("resources/textures/sand.jpg"); 
+    box[4] = LoadTexture("resources/textures/sand.jpg"); 
+    box[5] = LoadTexture("resources/textures/sand.jpg");
     //////////////////////////
 
     glEnable(GL_DEPTH_TEST);
