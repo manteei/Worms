@@ -7,6 +7,19 @@ using namespace sf;
 
 float angleX, angleY; // Углы поворота камеры
 
+class Map
+{
+public:
+    int maxX, maxY, maxZ;
+    int minX, minY, minZ;
+
+    Map(int x0, int y0, int z0) 
+    {
+        maxX = x0; maxY = y0; maxZ = z0;
+        minX = 0; minY = 0; minZ = 0;
+    }
+};
+
 class Player
 {
 public:
@@ -16,6 +29,7 @@ public:
     bool onGround;
     float speed;
     bool needJump;
+   
 
     Player(float x0, float y0, float z0)
     {
@@ -24,43 +38,78 @@ public:
         w = 5; h = 10; d = 5; speed = 5;
         onGround = false;
         needJump = false;
+        
     }
 
-    void update(float time)
+    void update(float time, Map map)
     {
         needJump = false;
         if (!onGround) dy -= 1.5 * time;
         onGround = 0;
 
         x += dx * time;
-        collision(dx, 0, 0);
+        collision(dx, 0, 0, map);
         y += dy * time;
-        collision(0, dy, 0);
+        collision(0, dy, 0, map);
         z += dz * time;
-        collision(0, 0, dz);
+        collision(0, 0, dz, map);
 
         dx = dz = 0;
 
-       
+
     }
 
-    void collision(float Dx, float Dy, float Dz)
-	{
-		for (int X = (x - w) / size; X < (x + w) / size; X++)
-			for (int Y = (y - h) / size; Y < (y + h) / size; Y++)
-				for (int Z = (z - d) / size; Z < (z + d) / size; Z++)
-					if (check(X, Y, Z)) {
+    void collision(float Dx, float Dy, float Dz, Map map)
+    {
+        float minX = map.minX; // Минимальная X-координата карты
+        float minY = map.minY; // Минимальная Y-координата карты
+        float minZ = map.minZ; // Минимальная Z-координата карты
+        float maxX = map.maxX * size; // Максимальная X-координата карты
+        float maxY = map.maxY * size; // Максимальная Y-координата карты
+        float maxZ = map.maxZ * size; // Максимальная Z-координата карты
+
+        // Проверьте, не выходит ли персонаж за границы карты
+        if (x - w + Dx < minX) {
+            x = minX + w;
+            needJump = true;
+        }
+        if (x + w + Dx > maxX) {
+            x = maxX - w;
+            needJump = true;
+        }
+        if (y - h + Dy < minY) {
+            y = minY + h;
+            onGround = true;
+            dy = 0;
+        }
+        if (y + h + Dy > maxY) {
+            y = maxY - h;
+        }
+        if (z - d + Dz < minZ) {
+            z = minZ + d;
+            needJump = true;
+        }
+        if (z + d + Dz > maxZ) {
+            z = maxZ - d;
+            needJump = true;
+        }
+
+        for (int X = (x - w) / size; X < (x + w) / size; X++)
+            for (int Y = (y - h) / size; Y < (y + h) / size; Y++)
+                for (int Z = (z - d) / size; Z < (z + d) / size; Z++)
+                    if (check(X, Y, Z)) {
                         if (Dx > 0) {
                             x = X * size - w; needJump = true;
                         }
-                        if (Dx < 0) { x = X * size + size + w; needJump = true;
+                        if (Dx < 0) {
+                            x = X * size + size + w; needJump = true;
                         }
-						if (Dy > 0)  y = Y * size - h;
-						if (Dy < 0) { y = Y * size + size + h; onGround = true; dy = 0; }
+                        if (Dy > 0)  y = Y * size - h;
+                        if (Dy < 0) { y = Y * size + size + h; onGround = true; dy = 0; }
                         if (Dz > 0) { z = Z * size - d; needJump = true; }
                         if (Dz < 0) { z = Z * size + size + d; needJump = true; }
-					}
-	}
+                    }
+    }
 
     void keyboard()
     {
@@ -71,7 +120,7 @@ public:
             dx = -sin(angleX / 180 * PI) * speed;
             dz = -cos(angleX / 180 * PI) * speed;
             if (needJump) {
-                onGround = false; dy = 12; 
+                onGround = false; dy = 12;
             }
         }
 
@@ -79,18 +128,27 @@ public:
         {
             dx = sin(angleX / 180 * PI) * speed;
             dz = cos(angleX / 180 * PI) * speed;
+            if (needJump) {
+                onGround = false; dy = 12;
+            }
         }
 
         if (Keyboard::isKeyPressed(Keyboard::D))
         {
             dx = sin((angleX + 90) / 180 * PI) * speed;
             dz = cos((angleX + 90) / 180 * PI) * speed;
+            if (needJump) {
+                onGround = false; dy = 12;
+            }
         }
 
         if (Keyboard::isKeyPressed(Keyboard::A))
         {
             dx = sin((angleX - 90) / 180 * PI) * speed;
             dz = cos((angleX - 90) / 180 * PI) * speed;
+            if (needJump) {
+                onGround = false; dy = 12;
+            }
         }
     }
 
@@ -146,19 +204,22 @@ int main()
     ////карта высот////
     Image im;  im.loadFromFile("resources/heightmap.png");
 
-	for (int x = 0; x < 256; x++)
-		for (int z = 0; z < 256; z++)
-		{
-			int c = im.getPixel(x, z).r / 15;
-			for (int y = 0; y < c; y++)
-				if (y > c - 3) mass[x][y][z] = 1;
-		}
+    for (int x = 0; x < 256; x++)
+        for (int z = 0; z < 256; z++)
+        {
+            int c = im.getPixel(x, z).r / 15;
+            for (int y = 0; y < c; y++)
+                if (y > c - 3) mass[x][y][z] = 1;
+        }
     Clock clock;
     // run the main loop
     bool running = true;
 
     bool mLeft = 0, mRight = 0; // mouse buttons
+
+    Map map(100, 60, 100);
     Player p(100, 200, 100);
+   
 
     while (window.isOpen())
     {
@@ -191,7 +252,7 @@ int main()
 
 
         p.keyboard();
-        p.update(time);
+        p.update(time, map);
 
         ////-----------------------
         POINT mousexy;
@@ -246,9 +307,9 @@ int main()
         glTranslatef(-p.x, -p.y, -p.z);
 
 
-        for (int x = 0; x < 100; x++)
-            for (int y = 0; y < 60; y++)
-                for (int z = 0; z < 100; z++)
+        for (int x = map.minX; x < map.maxX; x++)
+            for (int y = map.minY; y < map.maxY; y++)
+                for (int z = map.minZ; z < map.maxZ; z++)
                 {
                     if (!mass[x][y][z]) continue;
                     glTranslatef(x * size + size / 2, y * size + size / 2, z * size + size / 2);
