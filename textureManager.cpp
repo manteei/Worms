@@ -1,15 +1,9 @@
-#ifndef HELPFILE_H
-#define HELPFILE_H
+// TextureManager.cpp
+#include "textureManager.h"
 
-#include <SFML/OpenGL.hpp>
-#include <GL/glu.h>
 #define GL_CLAMP_TO_EDGE 0x812F
 
-const float PI = 3.141592653;
-bool mass[1000][1000][1000];
-float size = 20.f;
-
-GLuint LoadTexture(sf::String name)
+GLuint TextureManager::LoadTexture(sf::String name)
 {
     sf::Image image;
     if (!image.loadFromFile(name))
@@ -30,8 +24,7 @@ GLuint LoadTexture(sf::String name)
     return texture;
 }
 
-
-void createBox(GLuint skybox[], float size)
+void TextureManager::createBox(GLuint skybox[], float size)
 {
     glBindTexture(GL_TEXTURE_2D, skybox[0]);
     glBegin(GL_QUADS);
@@ -87,17 +80,3 @@ void createBox(GLuint skybox[], float size)
     glTexCoord2f(0, 1); glVertex3f(-size, size, size);
     glEnd();
 }
-
-
-bool check(int x, int y, int z)
-{
-    if ((x < 0) || (x >= 1000) ||
-        (y < 0) || (y >= 1000) ||
-        (z < 0) || (z >= 1000)) return false;
-
-    return mass[x][y][z];
-}
-
-
-
-#endif HELPFILE_H

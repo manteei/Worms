@@ -2,10 +2,25 @@
 #include <SFML/OpenGL.hpp>
 #include <iostream>
 #include <GL/glu.h>
-#include "helpFile.hpp"
+#include "textureManager.h"
+
 using namespace sf;
 
 float angleX, angleY; // Углы поворота камеры
+
+const float PI = 3.141592653;
+bool mass[1000][1000][1000];
+float size = 20.f;
+
+
+bool check(int x, int y, int z)
+{
+    if ((x < 0) || (x >= 1000) ||
+        (y < 0) || (y >= 1000) ||
+        (z < 0) || (z >= 1000)) return false;
+
+    return mass[x][y][z];
+}
 
 class Map
 {
@@ -13,11 +28,50 @@ public:
     int maxX, maxY, maxZ;
     int minX, minY, minZ;
 
-    Map(int x0, int y0, int z0) 
+    Map(int x0, int y0, int z0)
     {
         maxX = x0; maxY = y0; maxZ = z0;
         minX = 0; minY = 0; minZ = 0;
+
+
+
     }
+
+    TextureManager textureManager;
+
+    GLuint* createTexture() {
+        GLuint* box = new GLuint[6];
+        box[0] = textureManager.LoadTexture("resources/textures/sand.jpg");
+        box[1] = textureManager.LoadTexture("resources/textures/sand.jpg");
+        box[2] = textureManager.LoadTexture("resources/textures/sand.jpg");
+        box[3] = textureManager.LoadTexture("resources/textures/sand.jpg");
+        box[4] = textureManager.LoadTexture("resources/textures/sand.jpg");
+        box[5] = textureManager.LoadTexture("resources/textures/sand.jpg");
+        return box;
+    }
+    void createMap() {
+        Image im;  im.loadFromFile("resources/heightmap.png");
+
+        for (int x = 0; x < 256; x++)
+            for (int z = 0; z < 256; z++)
+            {
+                int c = im.getPixel(x, z).r / 15;
+                for (int y = 0; y < c; y++)
+                    if (y > c - 3) mass[x][y][z] = 1;
+            }
+    }
+    void generateMap(GLuint* box) {
+        for (int x = minX; x < maxX; x++)
+            for (int y = minY; y < maxY; y++)
+                for (int z = minZ; z < maxZ; z++)
+                {
+                    if (!mass[x][y][z]) continue;
+                    glTranslatef(x * size + size / 2, y * size + size / 2, z * size + size / 2);
+                    textureManager.createBox(box, size / 2);
+                    glTranslatef(-x * size - size / 2, -y * size - size / 2, -z * size - size / 2);
+                }
+    }
+
 };
 
 class Player
@@ -29,7 +83,7 @@ public:
     bool onGround;
     float speed;
     bool needJump;
-   
+
 
     Player(float x0, float y0, float z0)
     {
@@ -38,7 +92,7 @@ public:
         w = 5; h = 10; d = 5; speed = 5;
         onGround = false;
         needJump = false;
-        
+
     }
 
     void update(float time, Map map)
@@ -71,20 +125,17 @@ public:
         // Проверьте, не выходит ли персонаж за границы карты
         if (x - w + Dx < minX) {
             x = minX + w;
- 
         }
         if (x + w + Dx > maxX) {
             x = maxX - w;
 
         }
-        if (y - h + Dy < minY) {
-            y = minY + h;
-            onGround = true;
-            dy = 0;
+
+        if (y + h + Dy > maxY) {
+            y = maxY - h;
         }
         if (z - d + Dz < minZ) {
             z = minZ + d;
-
         }
         if (z + d + Dz > maxZ) {
             z = maxZ - d;
@@ -168,24 +219,23 @@ int main()
     t.loadFromFile("resources/cursor.png");
     Sprite s(t); s.setOrigin(8, 8); s.setPosition(400, 300);
 
+    Map map(100, 60, 100);
 
+    TextureManager textureManager;
     GLuint skybox[6];
-    skybox[0] = LoadTexture("resources/skybox4/front.png");
-    skybox[1] = LoadTexture("resources/skybox4/back.png");
-    skybox[2] = LoadTexture("resources/skybox4/left.png");
-    skybox[3] = LoadTexture("resources/skybox4/right.png");
-    skybox[4] = LoadTexture("resources/skybox4/bottom.png");
-    skybox[5] = LoadTexture("resources/skybox4/top.png");
-
-
-    GLuint box[6];
-    box[0] = LoadTexture("resources/textures/sand.jpg");
-    box[1] = LoadTexture("resources/textures/sand.jpg");    
-    box[2] = LoadTexture("resources/textures/sand.jpg"); 
-    box[3] = LoadTexture("resources/textures/sand.jpg"); 
-    box[4] = LoadTexture("resources/textures/sand.jpg"); 
-    box[5] = LoadTexture("resources/textures/sand.jpg");
+    skybox[0] = textureManager.LoadTexture("resources/skybox4/front.png");
+    skybox[1] = textureManager.LoadTexture("resources/skybox4/back.png");
+    skybox[2] = textureManager.LoadTexture("resources/skybox4/left.png");
+    skybox[3] = textureManager.LoadTexture("resources/skybox4/right.png");
+    skybox[4] = textureManager.LoadTexture("resources/skybox4/bottom.png");
+    skybox[5] = textureManager.LoadTexture("resources/skybox4/top.png");
     //////////////////////////
+    GLuint* box = map.createTexture();
+
+
+
+    map.createMap();
+
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
@@ -197,25 +247,16 @@ int main()
 
     ShowCursor(FALSE);
 
-    ////карта высот////
-    Image im;  im.loadFromFile("resources/heightmap.png");
-
-    for (int x = 0; x < 256; x++)
-        for (int z = 0; z < 256; z++)
-        {
-            int c = im.getPixel(x, z).r / 15;
-            for (int y = 0; y < c; y++)
-                if (y > c - 3) mass[x][y][z] = 1;
-        }
     Clock clock;
     // run the main loop
     bool running = true;
 
     bool mLeft = 0, mRight = 0; // mouse buttons
 
-    Map map(100, 60, 100);
+
     Player p(100, 200, 100);
-   
+
+    map.generateMap(box);
 
     while (window.isOpen())
     {
@@ -299,19 +340,10 @@ int main()
         gluLookAt(p.x, p.y + p.h / 2, p.z, p.x - sin(angleX / 180 * PI), p.y + p.h / 2 + (tan(angleY / 180 * PI)), p.z - cos(angleX / 180 * PI), 0, 1, 0);
 
         glTranslatef(p.x, p.y, p.z);
-        createBox(skybox, 1000);
+        textureManager.createBox(skybox, 1000);
         glTranslatef(-p.x, -p.y, -p.z);
 
-
-        for (int x = map.minX; x < map.maxX; x++)
-            for (int y = map.minY; y < map.maxY; y++)
-                for (int z = map.minZ; z < map.maxZ; z++)
-                {
-                    if (!mass[x][y][z]) continue;
-                    glTranslatef(x * size + size / 2, y * size + size / 2, z * size + size / 2);
-                    createBox(box, size / 2);
-                    glTranslatef(-x * size - size / 2, -y * size - size / 2, -z * size - size / 2);
-                }
+        map.generateMap(box);
 
         window.pushGLStates();
         window.draw(s);      //рисуем курсор

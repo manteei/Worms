@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="textureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="openal32.dll" />
@@ -35,9 +36,10 @@
     <None Include="sfml-window-d-2.dll" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="helpFile.hpp" />
+    <ClInclude Include="textureManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\Downloads\heighmap2.png" />
     <Image Include="..\..\..\VisualStudio Projects\Worms4\resources\textures\sand.jpg" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
